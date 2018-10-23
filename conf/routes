@@ -1,6 +1,4 @@
-# Routes
-# This file defines all application routes (Higher priority routes first)
-# https://www.playframework.com/documentation/latest/ScalaRouting
-# ~~~~
 
 GET     /service-info               controllers.HomeController.serviceInformation()
+
+GET     /messages                   controllers.TopicController.messages(page: Int ?= 0)
