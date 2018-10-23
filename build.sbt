@@ -17,7 +17,18 @@ lazy val root =
     )
 
 lazy val rootDependencies =
-  Seq(guice, akkaStreamKafka, kafkaAvroSerializer, playSlick, playSlickEvolutions, postgresql, h2, javaFaker)
+  Seq(
+    guice,
+    akkaStreamKafka,
+    kafkaAvroSerializer,
+    playSlick,
+    playSlickEvolutions,
+    postgresql,
+    h2,
+    javaFaker,
+    scalaLogging,
+    logbackClassic
+  )
 
 lazy val rootTestDependencies =
   Seq(scalaTestPlusPlay)

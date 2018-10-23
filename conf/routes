@@ -2,3 +2,5 @@
 GET     /service-info               controllers.HomeController.serviceInformation()
 
 GET     /messages                   controllers.TopicController.messages(page: Int ?= 0)
+
+GET     /live-messages              controllers.TopicController.liveMessages()
