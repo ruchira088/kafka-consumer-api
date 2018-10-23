@@ -3,19 +3,33 @@ package modules
 import akka.actor.ActorSystem
 import akka.kafka.ConsumerSettings
 import com.google.inject.{AbstractModule, Provides}
-import configuration.{EnvNames, ServiceConfiguration}
+import com.typesafe.scalalogging.Logger
+import configuration.{EnvNames, EnvironmentConfigurableProperties, ServiceConfiguration}
 import configuration.ServiceConfiguration.envValue
 import daos.{KafkaMessageDao, KafkaMessageSlickDao}
 import io.confluent.kafka.serializers.{AbstractKafkaAvroSerDeConfig, KafkaAvroDeserializer}
 import kafka.{KafkaConsumer, StubKafkaConsumer}
 import org.apache.kafka.common.serialization.StringDeserializer
+import play.api.libs.json.{Json, Writes}
 import services.messaging.{MessagingService, MessagingServiceImpl}
 
 import scala.collection.JavaConverters._
 
 class ConfigurationModule extends AbstractModule {
+  private val logger = Logger[ConfigurationModule]
+
   override def configure(): Unit = {
-    bind(classOf[ServiceConfiguration]).toInstance(new ServiceConfiguration {})
+    val serviceConfiguration =
+      new ServiceConfiguration {
+        override def environmentConfigurableProperties(): EnvironmentConfigurableProperties =
+          EnvironmentConfigurableProperties.parse(environmentVariables()).get
+      }
+
+    logger.info(s"Service Information: ${prettyPrint(serviceConfiguration.serviceInformation())}")
+    logger.info(s"Configurable Properties: ${prettyPrint(serviceConfiguration.environmentConfigurableProperties())}")
+    logger.info(s"Environment Variables: ${prettyPrint(serviceConfiguration.environmentVariables())}")
+
+    bind(classOf[ServiceConfiguration]).toInstance(serviceConfiguration)
     bind(classOf[MessagingService]).to(classOf[MessagingServiceImpl])
     bind(classOf[KafkaConsumer]).to(classOf[StubKafkaConsumer])
     bind(classOf[KafkaMessageDao]).to(classOf[KafkaMessageSlickDao])
@@ -34,4 +48,7 @@ class ConfigurationModule extends AbstractModule {
         Map(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG -> envValue(EnvNames.SCHEMA_REGISTRY_URL).get).asJava
       )
     )
+
+  private def prettyPrint[A](value: A)(implicit writes: Writes[A]): String =
+    Json.prettyPrint(Json.toJson(value))
 }

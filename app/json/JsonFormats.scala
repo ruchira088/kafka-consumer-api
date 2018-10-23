@@ -3,8 +3,9 @@ package json
 import exceptions.DataValidationException
 import json.JsonUtils.jsonResult
 import org.joda.time.DateTime
-import play.api.libs.json.{Format, JsResult, JsString, JsValue}
+import play.api.libs.json._
 
+import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Try}
 
 object JsonFormats {
@@ -18,5 +19,10 @@ object JsonFormats {
           case _ => Failure(DataValidationException("Must be a JSON string type"))
         }
       }
+  }
+
+  implicit object FiniteDurationWrites extends Writes[FiniteDuration] {
+    override def writes(finiteDuration: FiniteDuration): JsValue =
+      JsString(finiteDuration.toString())
   }
 }

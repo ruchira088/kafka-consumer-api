@@ -2,7 +2,6 @@ package configuration
 import java.util.UUID
 
 import com.ruchij.eed3si9n.BuildInfo
-import com.typesafe.config.{Config, ConfigFactory}
 import exceptions.UndefinedEnvValueException
 import org.joda.time.DateTime
 
@@ -15,7 +14,7 @@ trait ServiceConfiguration {
 
   def uuid(): UUID = UUID.randomUUID()
 
-  def typesafeConfig(): Config = ConfigFactory.load()
+  def environmentConfigurableProperties(): EnvironmentConfigurableProperties
 
   def serviceInformation(): ServiceInformation =
     ServiceInformation(
@@ -34,6 +33,4 @@ object ServiceConfiguration {
       .environmentVariables()
       .get(name)
       .fold[Try[String]](Failure(UndefinedEnvValueException(name)))(Success.apply)
-
-  val QUERY_PAGE_SIZE = 100
 }

@@ -1,6 +1,6 @@
 package daos
 
-import configuration.ServiceConfiguration.QUERY_PAGE_SIZE
+import configuration.ServiceConfiguration
 import javax.inject.{Inject, Singleton}
 import org.joda.time.DateTime
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
@@ -13,8 +13,9 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
 
 @Singleton
-class KafkaMessageSlickDao @Inject()(val dbConfigProvider: DatabaseConfigProvider)
-    extends KafkaMessageDao
+class KafkaMessageSlickDao @Inject()(val dbConfigProvider: DatabaseConfigProvider)(
+  implicit serviceConfiguration: ServiceConfiguration
+) extends KafkaMessageDao
     with HasDatabaseConfigProvider[JdbcProfile]
     with SlickMappedColumns {
 
@@ -45,6 +46,10 @@ class KafkaMessageSlickDao @Inject()(val dbConfigProvider: DatabaseConfigProvide
 
   override def getAll(page: Int)(implicit executionContext: ExecutionContext): Future[Seq[KafkaMessage]] =
     db.run {
-      kafkaMessages.drop(page * QUERY_PAGE_SIZE).take(QUERY_PAGE_SIZE).result
+      kafkaMessages
+        .sortBy(_.receivedAt.desc)
+        .drop(page * serviceConfiguration.environmentConfigurableProperties().queryPageSize)
+        .take(serviceConfiguration.environmentConfigurableProperties().queryPageSize)
+        .result
     }
 }

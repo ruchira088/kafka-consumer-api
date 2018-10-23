@@ -2,4 +2,8 @@ package configuration
 
 object EnvNames {
   val SCHEMA_REGISTRY_URL = "SCHEMA_REGISTRY_URL"
+
+  val DATABASE_POLL_INTERVAL = "DATABASE_POLL_INTERVAL"
+
+  val QUERY_PAGE_SIZE = "QUERY_PAGE_SIZE"
 }

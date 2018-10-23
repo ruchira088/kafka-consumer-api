@@ -4,6 +4,7 @@ import akka.actor.Cancellable
 import akka.kafka.ConsumerMessage.CommittableMessage
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
+import com.typesafe.scalalogging.Logger
 import configuration.ServiceConfiguration
 import daos.KafkaMessageDao
 import javax.inject.{Inject, Singleton}
@@ -23,6 +24,8 @@ class MessagingServiceImpl @Inject()(kafkaConsumer: KafkaConsumer, kafkaMessageD
   implicit materializer: Materializer,
   serviceConfiguration: ServiceConfiguration
 ) extends MessagingService {
+
+  private val logger = Logger[MessagingServiceImpl]
 
   override def init(topicNames: List[String])(implicit executionContext: ExecutionContext): Future[Done] =
     kafkaConsumer
@@ -49,10 +52,16 @@ class MessagingServiceImpl @Inject()(kafkaConsumer: KafkaConsumer, kafkaMessageD
       .runWith(Sink.ignore)
 
   override def subscribe()(implicit executionContext: ExecutionContext): Source[Seq[KafkaMessage], Cancellable] = {
+    logger.info("New MessageServiceImpl subscription")
+
     val sentMessages = mutable.Set.empty[KafkaMessage]
 
     Source
-      .tick(initialDelay = 0 seconds, interval = 5 seconds, tick = (): Unit)
+      .tick(
+        initialDelay = 0 seconds,
+        interval = serviceConfiguration.environmentConfigurableProperties().databasePollInterval,
+        tick = (): Unit
+      )
       .mapAsync(parallelism = 1) { _ =>
         getAll(0)
       }
@@ -62,8 +71,10 @@ class MessagingServiceImpl @Inject()(kafkaConsumer: KafkaConsumer, kafkaMessageD
         }
       }
       .map { kafkaMessages =>
-        sentMessages ++= kafkaMessages
-        kafkaMessages
+        sentMessages.synchronized {
+          sentMessages ++= kafkaMessages
+        }
+        kafkaMessages.reverse
       }
   }
 
