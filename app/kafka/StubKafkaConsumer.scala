@@ -23,7 +23,7 @@ class StubKafkaConsumer @Inject()(implicit serviceConfiguration: ServiceConfigur
 
   override def subscribe(topics: String*): Source[CommittableMessage[String, AnyRef], _] =
     Source
-      .tick(initialDelay = 0 seconds, interval = 500 milliseconds, tick = (): Unit)
+      .tick(initialDelay = 1 second, interval = 0.1 seconds, tick = (): Unit)
       .map { _ =>
         CommittableMessage(
           new ConsumerRecord[String, AnyRef](

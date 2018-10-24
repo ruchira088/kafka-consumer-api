@@ -51,3 +51,5 @@ lazy val macroUtilities =
       scalaVersion := SCALA_VERSION,
       libraryDependencies ++= Seq(scalaReflect)
     )
+
+addCommandAlias("runWithPostgres", "run -Dconfig.file=conf/application.postgres.conf")

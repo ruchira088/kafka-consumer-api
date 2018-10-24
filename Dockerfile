@@ -14,6 +14,6 @@ COPY . .
 
 EXPOSE 9000 5005
 
-ENTRYPOINT ["sbt"]
+ENTRYPOINT ["sbt", "-jvm-debug", "5005"]
 
-CMD ["-jvm-debug", "5005", "run"]
+CMD ["run"]
