@@ -4,3 +4,7 @@ GET     /service-info               controllers.HomeController.serviceInformatio
 GET     /messages                   controllers.TopicController.messages(page: Int ?= 0)
 
 GET     /live-messages              controllers.TopicController.liveMessages()
+
+GET     /assets/*file               controllers.HomeController.publicAssets(file)
+
+GET     /                           controllers.HomeController.index()

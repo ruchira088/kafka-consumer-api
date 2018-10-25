@@ -1,7 +1,8 @@
 package controllers
 import actors.MessagingActor
 import akka.actor.ActorSystem
-import akka.stream.Materializer
+import akka.stream.{Materializer, OverflowStrategy}
+import configuration.ServiceConfiguration
 import controllers.responses.KafkaMessagesResponse
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.JsValue
@@ -16,16 +17,19 @@ import scala.concurrent.ExecutionContext
 class TopicController @Inject()(controllerComponents: ControllerComponents, messagingService: MessagingService)(
   implicit actorSystem: ActorSystem,
   materializer: Materializer,
-  executionContext: ExecutionContext
+  executionContext: ExecutionContext,
+  serviceConfiguration: ServiceConfiguration
 ) extends AbstractController(controllerComponents) {
 
   messagingService.init(List.empty)
 
   def liveMessages(): WebSocket =
     WebSocket.accept[JsValue, JsValue] { _ =>
-      ActorFlow.actorRef { sender =>
-        MessagingActor.props(messagingService, sender)
-      }
+      ActorFlow.actorRef(
+        sender => MessagingActor.props(messagingService, sender),
+        bufferSize = serviceConfiguration.environmentConfigurableProperties().webSocketBufferSize,
+        overflowStrategy = OverflowStrategy.fail
+      )
     }
 
   def messages(page: Int): Action[AnyContent] =

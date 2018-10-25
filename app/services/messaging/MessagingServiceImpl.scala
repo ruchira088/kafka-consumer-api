@@ -66,7 +66,6 @@ class MessagingServiceImpl @Inject()(kafkaConsumer: KafkaConsumer, kafkaMessageD
         getAll(0)
       }
       .map { kafkaMessages =>
-        logger.info(s"Fetched: ${kafkaMessages.map(_.offset).mkString(",")}")
         kafkaMessages.filter { kafkaMessage =>
           !sentMessages.contains(kafkaMessage)
         }
@@ -75,7 +74,6 @@ class MessagingServiceImpl @Inject()(kafkaConsumer: KafkaConsumer, kafkaMessageD
         sentMessages.synchronized {
           sentMessages ++= kafkaMessages
         }
-        logger.info(s"Sent: ${sentMessages.map(_.offset).toList.sorted.mkString(",")}")
         kafkaMessages.reverse
       }
   }
