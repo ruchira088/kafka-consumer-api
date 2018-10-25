@@ -10,7 +10,7 @@ object Dependencies {
 
   lazy val playSlick = "com.typesafe.play" %% "play-slick" % "3.0.3"
   lazy val playSlickEvolutions = "com.typesafe.play" %% "play-slick-evolutions" % "3.0.3"
-  lazy val postgresql = "org.postgresql" % "postgresql" % "42.2.4"
+  lazy val postgresql = "org.postgresql" % "postgresql" % "42.2.5"
   lazy val h2 = "com.h2database" % "h2" % "1.4.197"
 
   lazy val javaFaker = "com.github.javafaker" % "javafaker" % "0.16"
