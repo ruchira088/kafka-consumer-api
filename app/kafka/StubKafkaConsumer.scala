@@ -23,7 +23,7 @@ class StubKafkaConsumer @Inject()(implicit serviceConfiguration: ServiceConfigur
 
   override def subscribe(topics: String*): Source[CommittableMessage[String, AnyRef], _] =
     Source
-      .tick(initialDelay = 1 second, interval = 0.1 seconds, tick = (): Unit)
+      .tick(initialDelay = 1 second, interval = StubKafkaConsumer.MESSAGE_INTERVAL, tick = (): Unit)
       .map { _ =>
         CommittableMessage(
           new ConsumerRecord[String, AnyRef](
@@ -49,5 +49,7 @@ class StubKafkaConsumer @Inject()(implicit serviceConfiguration: ServiceConfigur
 }
 
 object StubKafkaConsumer {
-  val PARTITION_COUNT = 3
+  val PARTITION_COUNT: Int = 3
+
+  val MESSAGE_INTERVAL: FiniteDuration = 1 second
 }
