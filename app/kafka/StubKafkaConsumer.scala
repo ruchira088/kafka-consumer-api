@@ -51,5 +51,5 @@ class StubKafkaConsumer @Inject()(implicit serviceConfiguration: ServiceConfigur
 object StubKafkaConsumer {
   val PARTITION_COUNT: Int = 3
 
-  val MESSAGE_INTERVAL: FiniteDuration = 1 second
+  val MESSAGE_INTERVAL: FiniteDuration = 2 seconds
 }

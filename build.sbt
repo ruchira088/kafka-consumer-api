@@ -13,7 +13,7 @@ lazy val root =
       buildInfoKeys := BuildInfoKey.ofN(name, version, sbtVersion, scalaVersion),
       buildInfoPackage := "com.ruchij.eed3si9n",
       libraryDependencies ++=
-        rootDependencies ++ rootTestDependencies.map(_ % Test)
+        rootDependencies ++ Seq(scalaTestPlusPlay).map(_ % Test)
     )
 
 lazy val rootDependencies =
@@ -30,17 +30,20 @@ lazy val rootDependencies =
     logbackClassic
   )
 
-lazy val rootTestDependencies =
-  Seq(scalaTestPlusPlay)
-
 lazy val simpleKafkaPublisher =
   (project in file("./simple-kafka-publisher"))
+    .enablePlugins(BuildInfoPlugin)
     .settings(
       name := "simple-kafka-publisher",
       organization := organizationName,
       version := "0.0.1",
-      scalaVersion := SCALA_VERSION
+      scalaVersion := SCALA_VERSION,
+      buildInfoKeys := BuildInfoKey.ofN(name),
+      buildInfoPackage := "com.ruchij.publisher.eed3si9n",
+      libraryDependencies ++=
+        Seq(akkaActor, akkaStream, akkaStreamKafka, avro4sCore, kafkaAvroSerializer, javaFaker)
     )
+    .dependsOn(root)
 
 lazy val macroUtilities =
   (project in file("./macro-utilities"))

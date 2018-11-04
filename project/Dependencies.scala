@@ -5,7 +5,12 @@ object Dependencies {
 
   lazy val scalaReflect = "org.scala-lang" % "scala-reflect" % SCALA_VERSION
 
+  val AKKA_VERSION = "2.5.17"
+  lazy val akkaActor = "com.typesafe.akka" %% "akka-actor" % AKKA_VERSION
+  lazy val akkaStream = "com.typesafe.akka" %% "akka-stream" % AKKA_VERSION
+
   lazy val akkaStreamKafka = "com.typesafe.akka" %% "akka-stream-kafka" % "0.22"
+  lazy val avro4sCore = "com.sksamuel.avro4s" %% "avro4s-core" % "1.9.0"
   lazy val kafkaAvroSerializer = "io.confluent" % "kafka-avro-serializer" % "5.0.0"
 
   lazy val playSlick = "com.typesafe.play" %% "play-slick" % "3.0.3"

@@ -15,18 +15,24 @@ case class EnvironmentConfigurableProperties(
 )
 
 object EnvironmentConfigurableProperties {
+  val DEFAULT = EnvironmentConfigurableProperties(
+    databasePollInterval = 100 milliseconds,
+    queryPageSize = 100,
+    webSocketBufferSize = 128
+  )
+
   implicit val environmentConfigurablePropertiesWrites: Writes[EnvironmentConfigurableProperties] =
     Json.writes[EnvironmentConfigurableProperties]
 
   def parse(environmentVariables: Map[String, String]): Try[EnvironmentConfigurableProperties] =
     for {
-      queryPageSize <- envValueAsInt(environmentVariables, QUERY_PAGE_SIZE, default = 100)
+      queryPageSize <- envValueAsInt(environmentVariables, QUERY_PAGE_SIZE, DEFAULT.queryPageSize)
       databasePollInterval <- envValueAsSeconds(
         environmentVariables,
         DATABASE_POLL_INTERVAL,
-        default = 100 milliseconds
+        DEFAULT.databasePollInterval
       )
-      webSocketBufferSize <- envValueAsInt(environmentVariables, WEB_SOCKET_BUFFER_SIZE, 128)
+      webSocketBufferSize <- envValueAsInt(environmentVariables, WEB_SOCKET_BUFFER_SIZE, DEFAULT.webSocketBufferSize)
     } yield EnvironmentConfigurableProperties(databasePollInterval, queryPageSize, webSocketBufferSize)
 
   def envValueAsInt(environmentVariables: Map[String, String], envName: String, default: Int): Try[Int] =
