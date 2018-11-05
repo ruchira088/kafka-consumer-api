@@ -1,13 +1,16 @@
 package actors
 import akka.Done
 import akka.actor.{Actor, ActorRef, Cancellable, Props}
-import akka.stream.scaladsl.{Keep, Sink}
+import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.stream.{KillSwitches, Materializer}
 import com.typesafe.scalalogging.Logger
 import play.api.libs.json.Json.{toJson => json}
+import play.api.libs.json.{JsValue, Json}
 import services.messaging.{KafkaMessage, MessagingService}
 
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.postfixOps
 
 sealed abstract class MessagingActor(messagingService: MessagingService, sender: ActorRef)(
   implicit materializer: Materializer
@@ -28,12 +31,25 @@ sealed abstract class MessagingActor(messagingService: MessagingService, sender:
       }
     }
 
-  def start()(implicit executionContext: ExecutionContext): Cancellable =
-    messagingService
+  def start()(implicit executionContext: ExecutionContext): Cancellable = {
+    val messageCancellable = messagingService
       .subscribe()
       .viaMat(KillSwitches.single)(Keep.left)
       .toMat(sink)(Keep.left)
       .run()
+
+    val heartBeatCancellable =
+      MessagingActor
+        .heartBeat()
+        .viaMat(KillSwitches.single)(Keep.left)
+        .toMat(Sink.foreach(sender ! _))(Keep.left)
+        .run()
+
+    new Cancellable {
+      override def cancel(): Boolean = messageCancellable.cancel() && heartBeatCancellable.cancel()
+      override def isCancelled: Boolean = messageCancellable.isCancelled && heartBeatCancellable.isCancelled
+    }
+  }
 
   override def postStop(): Unit = {
     logger.info("Stopping web socket....")
@@ -55,4 +71,7 @@ object MessagingActor {
         override val stop: Cancellable = start()
       }
     }
+
+  def heartBeat(): Source[JsValue, Cancellable] =
+    Source.tick(initialDelay = 5 seconds, interval = 30 seconds, tick = Json.obj("isHeartBeat" -> true))
 }
