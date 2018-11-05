@@ -9,6 +9,7 @@ import scala.language.postfixOps
 import scala.util.{Success, Try}
 
 case class EnvironmentConfigurableProperties(
+  topicsList: List[String],
   databasePollInterval: FiniteDuration,
   queryPageSize: Int,
   webSocketBufferSize: Int
@@ -16,6 +17,7 @@ case class EnvironmentConfigurableProperties(
 
 object EnvironmentConfigurableProperties {
   val DEFAULT = EnvironmentConfigurableProperties(
+    topicsList = List("SAMPLE_TOPIC"),
     databasePollInterval = 100 milliseconds,
     queryPageSize = 100,
     webSocketBufferSize = 128
@@ -26,6 +28,7 @@ object EnvironmentConfigurableProperties {
 
   def parse(environmentVariables: Map[String, String]): Try[EnvironmentConfigurableProperties] =
     for {
+      topics <- envValueAsStringList(environmentVariables, KAFKA_TOPICS, DEFAULT.topicsList)
       queryPageSize <- envValueAsInt(environmentVariables, QUERY_PAGE_SIZE, DEFAULT.queryPageSize)
       databasePollInterval <- envValueAsSeconds(
         environmentVariables,
@@ -33,7 +36,7 @@ object EnvironmentConfigurableProperties {
         DEFAULT.databasePollInterval
       )
       webSocketBufferSize <- envValueAsInt(environmentVariables, WEB_SOCKET_BUFFER_SIZE, DEFAULT.webSocketBufferSize)
-    } yield EnvironmentConfigurableProperties(databasePollInterval, queryPageSize, webSocketBufferSize)
+    } yield EnvironmentConfigurableProperties(topics, databasePollInterval, queryPageSize, webSocketBufferSize)
 
   def envValueAsInt(environmentVariables: Map[String, String], envName: String, default: Int): Try[Int] =
     environmentVariables
@@ -41,6 +44,15 @@ object EnvironmentConfigurableProperties {
       .fold[Try[Int]](Success(default)) { string =>
         Try(Integer.parseInt(string))
       }
+
+  def envValueAsStringList(
+    environmentVariables: Map[String, String],
+    envName: String,
+    default: List[String]
+  ): Try[List[String]] =
+    environmentVariables.get(envName).fold(Success(default)) { list =>
+      Success(list.split('=').toList)
+    }
 
   def envValueAsSeconds(
     environmentVariables: Map[String, String],

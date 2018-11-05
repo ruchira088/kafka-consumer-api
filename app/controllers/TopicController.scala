@@ -21,8 +21,6 @@ class TopicController @Inject()(controllerComponents: ControllerComponents, mess
   serviceConfiguration: ServiceConfiguration
 ) extends AbstractController(controllerComponents) {
 
-  messagingService.init(List.empty)
-
   def liveMessages(): WebSocket =
     WebSocket.accept[JsValue, JsValue] { _ =>
       ActorFlow.actorRef(
@@ -42,5 +40,4 @@ class TopicController @Inject()(controllerComponents: ControllerComponents, mess
           }
         }
     }
-
 }

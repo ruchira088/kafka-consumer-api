@@ -1,5 +1,7 @@
 package com.ruchij.kafka.publisher
 
+import java.util.UUID
+
 import akka.actor.ActorSystem
 import akka.kafka.ProducerSettings
 import akka.stream.ActorMaterializer
@@ -31,10 +33,18 @@ object App {
       ).withBootstrapServers(ServiceConfiguration.envValue(EnvNames.KAFKA_BOOTSTRAP_SERVERS).get)
 
     val kafkaProducer = new KafkaProducerImpl(producerSettings) { initialize() }
+    val topicName =
+      EnvironmentConfigurableProperties.DEFAULT.topicsList.headOption
+        .getOrElse(throw new Exception("Topics list is EMPTY !!!"))
 
     actorSystem.scheduler.schedule(1 second, 5 seconds) {
-      val producerRecord =
-        new ProducerRecord[String, AnyRef]("", "", KafkaMessage.recordFormat.to(KafkaMessage.random()))
+      kafkaProducer.tell {
+        new ProducerRecord[String, AnyRef](
+          topicName,
+          UUID.randomUUID().toString,
+          KafkaMessage.recordFormat.to(KafkaMessage.random())
+        )
+      }
     }
   }
 }
