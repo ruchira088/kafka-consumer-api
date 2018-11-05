@@ -15,6 +15,7 @@ lazy val root =
       libraryDependencies ++=
         rootDependencies ++ Seq(scalaTestPlusPlay).map(_ % Test)
     )
+    .dependsOn(macroUtilities)
 
 lazy val rootDependencies =
   Seq(
