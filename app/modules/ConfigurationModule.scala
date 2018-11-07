@@ -13,13 +13,16 @@ import configuration.ServiceConfiguration.envValue
 import daos.{KafkaMessageDao, KafkaMessageSlickDao}
 import io.confluent.kafka.serializers.{AbstractKafkaAvroSerDeConfig, KafkaAvroDeserializer}
 import kafka.{KafkaConsumer, KafkaConsumerImpl, StubKafkaConsumer}
+import org.apache.kafka.clients.CommonClientConfigs
+import org.apache.kafka.common.security.auth.SecurityProtocol
 import org.apache.kafka.common.serialization.StringDeserializer
 import play.api.libs.json.{Json, Writes}
 import services.messaging.{MessagingService, MessagingServiceImpl}
+import utils.Parsers
 
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext
-import scala.util.Try
+import scala.util.{Success, Try}
 
 class ConfigurationModule extends AbstractModule {
   private val logger = Logger[ConfigurationModule]
@@ -62,6 +65,7 @@ class ConfigurationModule extends AbstractModule {
       new KafkaAvroDeserializer(null, ConfigurationModule.kafkaAvroProps.get)
     ).withGroupId(BuildInfo.name)
       .withBootstrapServers(envValue(EnvNames.KAFKA_BOOTSTRAP_SERVERS).get)
+      .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, ConfigurationModule.kafkaSecurityProtocol.get.name)
       .withMaxWakeups(0)
 
   private def prettyPrint[A](value: A)(implicit writes: Writes[A]): String =
@@ -74,4 +78,14 @@ object ConfigurationModule {
     for {
       schemaRegistryUrl <- envValue(EnvNames.SCHEMA_REGISTRY_URL)
     } yield Map(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG -> schemaRegistryUrl).asJava
+
+  def kafkaSecurityProtocol(implicit serviceConfiguration: ServiceConfiguration): Try[SecurityProtocol] =
+    serviceConfiguration
+      .environmentVariables()
+      .get(EnvNames.KAFKA_SSL_ENABLED)
+      .fold[Try[SecurityProtocol]](Success(SecurityProtocol.PLAINTEXT)) { booleanString =>
+        Parsers
+          .booleanParser(booleanString)
+          .map(isEnabled => if (isEnabled) SecurityProtocol.SSL else SecurityProtocol.PLAINTEXT)
+      }
 }
