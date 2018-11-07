@@ -51,7 +51,7 @@ object EnvironmentConfigurableProperties {
     default: List[String]
   ): Try[List[String]] =
     environmentVariables.get(envName).fold(Success(default)) { list =>
-      Success(list.split('=').toList)
+      Success(list.split(',').map(_.trim).toList)
     }
 
   def envValueAsSeconds(
