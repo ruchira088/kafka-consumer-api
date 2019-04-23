@@ -1,45 +1,46 @@
 package modules
 
-import java.util
-
 import akka.actor.ActorSystem
 import akka.kafka.ConsumerSettings
 import akka.stream.Materializer
 import com.google.inject.{AbstractModule, Provides}
 import com.ruchij.eed3si9n.BuildInfo
+import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
-import configuration.{EnvNames, EnvironmentConfigurableProperties, ServiceConfiguration}
-import configuration.ServiceConfiguration.envValue
+import configuration.{KafkaConfiguration, OtherConfigurations, ServiceConfiguration}
 import daos.{KafkaMessageDao, KafkaMessageSlickDao}
 import io.confluent.kafka.serializers.{AbstractKafkaAvroSerDeConfig, KafkaAvroDeserializer}
-import kafka.{KafkaConsumer, KafkaConsumerImpl, StubKafkaConsumer}
+import kafka.{KafkaConsumer, KafkaConsumerImpl}
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.common.security.auth.SecurityProtocol
 import org.apache.kafka.common.serialization.StringDeserializer
 import play.api.libs.json.{Json, Writes}
 import services.messaging.{MessagingService, MessagingServiceImpl}
-import utils.Parsers
 
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext
-import scala.util.{Success, Try}
 
 class ConfigurationModule extends AbstractModule {
   private val logger = Logger[ConfigurationModule]
 
   override def configure(): Unit = {
+    val config = ConfigFactory.load()
+
     val serviceConfiguration =
       new ServiceConfiguration {
-        override def environmentConfigurableProperties(): EnvironmentConfigurableProperties =
-          EnvironmentConfigurableProperties.parse(environmentVariables()).get
+        override def otherConfigurations(): OtherConfigurations =
+          OtherConfigurations.parse(config).get
+
+        override def kafkaConfiguration(): KafkaConfiguration =
+          KafkaConfiguration.parse(config).get
       }
 
     logger.info(s"Service Information: ${prettyPrint(serviceConfiguration.serviceInformation())}")
-    logger.info(s"Configurable Properties: ${prettyPrint(serviceConfiguration.environmentConfigurableProperties())}")
+    logger.info(s"Kafka Configurations: ${prettyPrint(serviceConfiguration.kafkaConfiguration())}")
+    logger.info(s"Other Configurations: ${prettyPrint(serviceConfiguration.otherConfigurations())}")
     logger.info(s"Environment Variables: ${prettyPrint(serviceConfiguration.environmentVariables())}")
 
     bind(classOf[ServiceConfiguration]).toInstance(serviceConfiguration)
-//    bind(classOf[KafkaConsumer]).to(classOf[StubKafkaConsumer])
     bind(classOf[KafkaConsumer]).to(classOf[KafkaConsumerImpl])
     bind(classOf[KafkaMessageDao]).to(classOf[KafkaMessageSlickDao])
   }
@@ -51,7 +52,7 @@ class ConfigurationModule extends AbstractModule {
     serviceConfiguration: ServiceConfiguration
   ): MessagingService =
     new MessagingServiceImpl(kafkaConsumer, kafkaMessageDao) {
-      init(serviceConfiguration.environmentConfigurableProperties().topicsList)
+      init(serviceConfiguration.kafkaConfiguration().topicsList)
     }
 
   @Provides
@@ -62,10 +63,10 @@ class ConfigurationModule extends AbstractModule {
     ConsumerSettings(
       actorSystem,
       new StringDeserializer,
-      new KafkaAvroDeserializer(null, ConfigurationModule.kafkaAvroProps.get)
+      new KafkaAvroDeserializer(null, ConfigurationModule.avroConfiguration.asJava)
     ).withGroupId(BuildInfo.name)
-      .withBootstrapServers(envValue(EnvNames.KAFKA_BOOTSTRAP_SERVERS).get)
-      .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, ConfigurationModule.kafkaSecurityProtocol.get.name)
+      .withBootstrapServers(serviceConfiguration.kafkaConfiguration().bootstrapServers.mkString(","))
+      .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, ConfigurationModule.kafkaSecurityProtocol.name)
       .withMaxWakeups(0)
 
   private def prettyPrint[A](value: A)(implicit writes: Writes[A]): String =
@@ -73,19 +74,12 @@ class ConfigurationModule extends AbstractModule {
 }
 
 object ConfigurationModule {
+  def avroConfiguration(implicit serviceConfiguration: ServiceConfiguration): Map[String, String] =
+    Map(
+      AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG ->
+        serviceConfiguration.kafkaConfiguration().schemaRegistry.mkString(",")
+    )
 
-  def kafkaAvroProps(implicit serviceConfiguration: ServiceConfiguration): Try[util.Map[String, String]] =
-    for {
-      schemaRegistryUrl <- envValue(EnvNames.SCHEMA_REGISTRY_URL)
-    } yield Map(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG -> schemaRegistryUrl).asJava
-
-  def kafkaSecurityProtocol(implicit serviceConfiguration: ServiceConfiguration): Try[SecurityProtocol] =
-    serviceConfiguration
-      .environmentVariables()
-      .get(EnvNames.KAFKA_SSL_ENABLED)
-      .fold[Try[SecurityProtocol]](Success(SecurityProtocol.PLAINTEXT)) { booleanString =>
-        Parsers
-          .booleanParser(booleanString)
-          .map(isEnabled => if (isEnabled) SecurityProtocol.SSL else SecurityProtocol.PLAINTEXT)
-      }
+  def kafkaSecurityProtocol(implicit serviceConfiguration: ServiceConfiguration): SecurityProtocol =
+    if (serviceConfiguration.kafkaConfiguration().sslEnabled) SecurityProtocol.SSL else SecurityProtocol.PLAINTEXT
 }

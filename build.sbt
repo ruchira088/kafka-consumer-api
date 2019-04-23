@@ -42,7 +42,7 @@ lazy val simpleKafkaPublisher =
       buildInfoKeys := BuildInfoKey.ofN(name),
       buildInfoPackage := "com.ruchij.publisher.eed3si9n",
       libraryDependencies ++=
-        Seq(akkaActor, akkaStream, akkaStreamKafka, avro4sCore, kafkaAvroSerializer, javaFaker)
+        Seq(akkaActor, akkaStream, akkaStreamKafka, avro4sCore, kafkaAvroSerializer, javaFaker, logbackClassic)
     )
     .dependsOn(root)
 

@@ -25,7 +25,7 @@ class TopicController @Inject()(controllerComponents: ControllerComponents, mess
     WebSocket.accept[JsValue, JsValue] { _ =>
       ActorFlow.actorRef(
         sender => MessagingActor.props(messagingService, sender),
-        bufferSize = serviceConfiguration.environmentConfigurableProperties().webSocketBufferSize,
+        bufferSize = serviceConfiguration.otherConfigurations().webSocketBufferSize,
         overflowStrategy = OverflowStrategy.fail
       )
     }

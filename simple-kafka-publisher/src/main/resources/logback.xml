@@ -1,0 +1,15 @@
+<configuration>
+    <appender name="standardOut" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date [%level] from %logger in %thread - %message%n%xException</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="asyncStandardOut" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="standardOut"/>
+    </appender>
+
+    <root level="DEBUG">
+        <appender-ref ref="asyncStandardOut"/>
+    </root>
+</configuration>

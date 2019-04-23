@@ -14,7 +14,9 @@ trait ServiceConfiguration {
 
   def uuid(): UUID = UUID.randomUUID()
 
-  def environmentConfigurableProperties(): EnvironmentConfigurableProperties
+  def otherConfigurations(): OtherConfigurations
+
+  def kafkaConfiguration(): KafkaConfiguration
 
   def serviceInformation(): ServiceInformation =
     ServiceInformation(
@@ -25,12 +27,4 @@ trait ServiceConfiguration {
       BuildInfo.sbtVersion,
       BuildInfo.scalaVersion
     )
-}
-
-object ServiceConfiguration {
-  def envValue(name: String)(implicit serviceConfiguration: ServiceConfiguration): Try[String] =
-    serviceConfiguration
-      .environmentVariables()
-      .get(name)
-      .fold[Try[String]](Failure(UndefinedEnvValueException(name)))(Success.apply)
 }

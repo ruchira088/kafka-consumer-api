@@ -12,8 +12,8 @@ WORKDIR /opt/kafka-consumer-api
 
 COPY . .
 
-EXPOSE 9000 5005
+EXPOSE 9000
 
-ENTRYPOINT ["sbt", "-jvm-debug", "5005"]
+ENTRYPOINT ["sbt"]
 
 CMD ["run"]

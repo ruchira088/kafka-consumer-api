@@ -1,6 +1,5 @@
 package controllers
 
-import com.google.common.net.HttpHeaders
 import configuration.ServiceConfiguration
 import controllers.Assets.Asset
 import javax.inject._
@@ -12,14 +11,14 @@ class HomeController @Inject()(controllerComponents: ControllerComponents, asset
   implicit serviceConfiguration: ServiceConfiguration
 ) extends AbstractController(controllerComponents) {
 
-  def serviceInformation() =
+  def serviceInformation(): Action[AnyContent] =
     Action {
       Ok {
         json(serviceConfiguration.serviceInformation())
       }
     }
 
-  def index() =
+  def index(): Action[AnyContent] =
     Action {
       Ok(views.html.index())
     }

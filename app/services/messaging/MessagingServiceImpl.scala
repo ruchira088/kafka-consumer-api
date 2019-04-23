@@ -38,13 +38,15 @@ class MessagingServiceImpl @Inject()(kafkaConsumer: KafkaConsumer, kafkaMessageD
             kafkaMessage <- kafkaMessageDao.insert {
               KafkaMessage(
                 record.topic(),
-                serviceConfiguration.currentTimestamp(),
+                new DateTime(record.timestamp()),
                 record.key(),
                 json,
                 record.partition(),
                 record.offset()
               )
             }
+
+            _ = println(kafkaMessage)
 
           } yield committableOffset
       }
@@ -59,7 +61,7 @@ class MessagingServiceImpl @Inject()(kafkaConsumer: KafkaConsumer, kafkaMessageD
     Source
       .tick(
         initialDelay = 0 seconds,
-        interval = serviceConfiguration.environmentConfigurableProperties().databasePollInterval,
+        interval = serviceConfiguration.otherConfigurations().databasePollInterval,
         tick = (): Unit
       )
       .mapAsync(parallelism = 1) { _ =>

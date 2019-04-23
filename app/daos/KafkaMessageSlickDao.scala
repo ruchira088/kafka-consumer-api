@@ -48,8 +48,8 @@ class KafkaMessageSlickDao @Inject()(val dbConfigProvider: DatabaseConfigProvide
     db.run {
       kafkaMessages
         .sortBy(_.receivedAt.desc)
-        .drop(page * serviceConfiguration.environmentConfigurableProperties().queryPageSize)
-        .take(serviceConfiguration.environmentConfigurableProperties().queryPageSize)
+        .drop(page * serviceConfiguration.otherConfigurations().queryPageSize)
+        .take(serviceConfiguration.otherConfigurations().queryPageSize)
         .result
     }
 }
